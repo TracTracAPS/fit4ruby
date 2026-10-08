@@ -166,19 +166,27 @@ module Fit4Ruby
       end
 
       # Laps must have a consecutively growing message index.
+      # Heart-rate-zone message type 18 belongs to the session,
+      # while type 19 belongs to individual laps.
+      lap_heart_rate_zones = @heart_rate_zones.select do |zone|
+        zone.instance_variable_get(:@type) == 19
+      end
+
       @laps.each.with_index do |lap, index|
         lap.check(index, self)
+
         # If we have heart rate zone records, there should be one for each
-        # lap
-        @heart_rate_zones[index].check(index) if @heart_rate_zones[index]
+        # lap.
+        lap_heart_rate_zones[index].check(index) if lap_heart_rate_zones[index]
       end
 
       # Lengths must have a consecutively growing message index.
       @lengths.each.with_index do |length, index|
         length.check(index)
-        # If we have heart rate zone records, there should be one for each
-        # length
-        @heart_rate_zones[index].check(index) if @heart_rate_zones[index]
+
+        # If we have lap-level heart rate zone records, there should be one
+        # for each length.
+        lap_heart_rate_zones[index].check(index) if lap_heart_rate_zones[index]
       end
 
       @sessions.each { |s| s.check(self) }
